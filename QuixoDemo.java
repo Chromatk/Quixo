@@ -1,4 +1,4 @@
-
+//Demo shows selection and placement of blocks by AI to more easily visualize moves
 
 import java.awt.*;
 import java.util.*;
@@ -7,7 +7,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import java.awt.event.*;
 
-public class Quixo extends JPanel implements Runnable, MouseListener
+public class QuixoDemo extends JPanel implements Runnable, MouseListener
 {
 	//variable declaration
 
@@ -39,13 +39,13 @@ public class Quixo extends JPanel implements Runnable, MouseListener
 	AIPlayer player1;
 	AIPlayer player2;
 
-	float fps = 5f;
+	float fps = 2f;
 
 	public static void main(String[] args) {
-		new Quixo();
+		new QuixoDemo();
 	}
 
-	public Quixo()
+	public QuixoDemo()
 	{
 		frame = new JFrame();
 		frame.setTitle("java");
@@ -131,37 +131,47 @@ public class Quixo extends JPanel implements Runnable, MouseListener
 		repaint();
 		long lastRenderTime = System.currentTimeMillis();
 		long lastActionTime = System.currentTimeMillis();
+		boolean demoSwitch = false;
+		int[] AImove = new int[2];
 		while(!gameOver)
 		{
 			long currentTime = System.currentTimeMillis();
 			if(currentTime-lastActionTime>=1000f/fps) {
 				if(enableAI1 && turnNum%2==0) {
-					int[] AImove = player1.move(isColored, isBlue);
-					System.out.println(turnNum + " | blue | " + AImove[0] + ", " + AImove[1] + " | " + AImove[2] + ", " + AImove[3]);
-					if(selectTile(AImove[0], AImove[1])) {
+					
+					if(!demoSwitch) {
+						AImove = player1.move(isColored, isBlue);
+						System.out.println(turnNum + " | blue | " + AImove[0] + ", " + AImove[1] + " | " + AImove[2] + ", " + AImove[3]);
+						selectTile(AImove[0], AImove[1]);
+						demoSwitch = true;
+					} else {
 						makeMove(AImove[2], AImove[3]);
+						demoSwitch = false;
+						if(checkForBlueVictory()) {
+							gameOver = true;
+							winner = 2;
+						}
 					}
-					if(checkForBlueVictory()) {
-						gameOver = true;
-						winner = 2;
-					}
+					
 				}
 
 				else if(enableAI2 && turnNum%2==1) {
-					int[] AImove = player2.move(isColored, isBlue);
-					System.out.println(turnNum + " | red | " + AImove[0] + ", " + AImove[1] + " | " + AImove[2] + ", " + AImove[3]);
-					if(selectTile(AImove[0], AImove[1])) {
+					if(!demoSwitch) {
+						AImove = player2.move(isColored, isBlue);
+						System.out.println(turnNum + " | red | " + AImove[0] + ", " + AImove[1] + " | " + AImove[2] + ", " + AImove[3]);
+						selectTile(AImove[0], AImove[1]);
+						demoSwitch = true;
+					} else {
 						makeMove(AImove[2], AImove[3]);
-					}
-					if(checkForRedVictory()) {
-						gameOver = true;
-						winner = 1;
+						demoSwitch = false;
+						if(checkForRedVictory()) {
+							gameOver = true;
+							winner = 1;
+						}
 					}	
 				}
 				lastActionTime = currentTime;
-			}
-			
-			if(currentTime-lastRenderTime>=1000f/fps) {
+
 				render();
 				repaint();
 				lastRenderTime = currentTime;
