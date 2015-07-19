@@ -4,8 +4,7 @@ public class AIPlayer {
 	Random random = new Random();
 
 	boolean color;
-	boolean[][] isColored;
-	boolean[][] isBlue;
+	QuixoBoard board;
 	int[][] outerTiles;
 
 	ArrayList<int[]> allPossibleMoves = new ArrayList<int[]>();
@@ -37,13 +36,12 @@ public class AIPlayer {
 
 	}
 
-	public int[] move(boolean[][] inColor, boolean[][] inBlue) {
+	public int[] move(QuixoBoard b) {
 		
 		allPossibleMoves.clear();
-
+		board = b.copyOf();
+		
 		int[] movesOutput = new int[4];
-		isColored=inColor;
-		isBlue=inBlue;
 
 		generateAllMoves();
 
@@ -59,11 +57,11 @@ public class AIPlayer {
 	}
 
 	void generateAllMoves() {
-		System.out.println("color: " + color);
+		//System.out.println("color: " + color);
 		for(int[] i:outerTiles) {
 
-			if(!isColored[i[0]][i[1]] || (isBlue[i[0]][i[1]]==color)) {
-				for(int[] j:getTargets(i)) {
+			if(!board.isColored[i[0]][i[1]] || (board.isBlue[i[0]][i[1]]==color)) {
+				for(int[] j:QuixoRules.movableTiles(i)) {
 					allPossibleMoves.add(new int[]{i[0],i[1],j[0],j[1]});
 				}
 			}
@@ -75,12 +73,12 @@ public class AIPlayer {
 	}
 
 	double rateBoard(boolean[][] c, boolean[][] b) {
-
+		return 0.0;
 	}
 
 	
 
-	boolean[][][] getNewBoard(int[] move, boolean[][] c, boolean[][] b) {
+	/*boolean[][][] getNewBoard(int[] move, boolean[][] c, boolean[][] b) {
 		int selX = move[0];
 		int selY = move[1];
 		int xTarget = move[2];
@@ -131,66 +129,5 @@ public class AIPlayer {
 		blue[xTarget][yTarget] = color;
 
 		return(new boolean[][][]{colored, blue});
-	}
-
-	int[][] getTargets(int[] m) {
-		int sX = m[0];
-		int sY = m[1];
-		int[][] moves = new int[0][0];
-
-		if(sX==0) {
-			//corners
-			if(sY == 0 || sY ==4) { 
-				moves = new int[2][];
-				if(sY==0) {
-					moves[0]= new int[]{0,4};
-					moves[1]= new int[]{4,0};
-				}
-				if(sY==4) {
-					moves[0]= new int[]{0,0};
-					moves[1]= new int[]{4,4};
-				}
-				
-			} else {
-				moves = new int[3][];
-				moves[0]= new int[]{0,0};
-				moves[1]= new int[]{0,4};
-				moves[2]= new int[]{4,sY};
-			}	
-		} else if(sX==4) {
-			//corners
-			if(sY == 0 || sY ==4) { 
-				moves = new int[2][];
-				if(sY==0) {
-					moves[0]= new int[]{0,0};
-					moves[1]= new int[]{4,4};
-				}
-				if(sY==4) {
-					moves[0]= new int[]{0,4};
-					moves[1]= new int[]{4,0};
-				}
-				
-			} else {
-				moves = new int[3][];
-				moves[0]= new int[]{4,0};
-				moves[1]= new int[]{4,4};
-				moves[2]= new int[]{0,sY};
-			}	
-		}
-
-		else {
-			moves = new int[3][];
-			if(sY==0) {
-				moves[0]= new int[]{sX,4};
-				moves[1]= new int[]{0,0};
-				moves[2]= new int[]{4,0};
-			}
-			if(sY==4) {
-				moves[0]= new int[]{sX,0};
-				moves[1]= new int[]{4,4};
-				moves[2]= new int[]{0,4};
-			}
-		}
-		return moves;
-	}
+	}*/
 }

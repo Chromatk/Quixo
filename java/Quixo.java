@@ -22,14 +22,12 @@ public class Quixo extends JPanel implements Runnable, MouseListener
 	final int tileOffset = 5;
 	final int border = 20;
 
-	boolean[][] isColored = new boolean[5][5];
-	boolean[][] isBlue = new boolean[5][5];
+	QuixoBoard board;
 
 	boolean selected = false;
 	int selX;
 	int selY;
-	int[] movX;
-	int[] movY;
+	int[][] movable;
 
 	int turnNum = 0;
 
@@ -39,57 +37,161 @@ public class Quixo extends JPanel implements Runnable, MouseListener
 	AIPlayer player1;
 	AIPlayer player2;
 
-	float fps = 5f;
+	boolean demoMode = false;
+	boolean demoSwitch = false; //KEEP THIS AS FALSE ON INIT
 
-	public static void main(String[] args) {
-		new Quixo();
+	float fps = 20f;
+	float aps = 2f;
+	final boolean lockAPStoFPS = true;
+	final boolean apsUnlock = true;
+	final boolean fpsUnlock = true;
+
+	long lastRenderTime = System.currentTimeMillis();
+	long lastActionTime = System.currentTimeMillis();
+
+	boolean quit = false;
+	boolean gameOver = false;
+	int winner = 0;
+
+	public void run()
+	{
+		//Start of Thread
+		System.out.println("Start of Thread");
+	
+		resetVars();
+
+		render();
+		repaint();
+
+		int[] aiMove = new int[4];
+
+		while(!quit) {
+
+			while(!gameOver)
+			{
+				long currentTime = System.currentTimeMillis()+999999999l;
+
+				//AI stuff
+				if((currentTime-lastActionTime>=1000f/aps || apsUnlock) && (enableAI1 || enableAI2)) {
+					
+					//if demoMode is false, !demoSwitch and demoSwitch should happen on the same iteration
+
+					// !demoSwitch choosing a move and only drawing the selected tile
+					if(!demoSwitch) {
+						if(enableAI1 && turnNum%2==0) {//essential
+							aiMove = player1.move(board); //essential
+							System.out.println(turnNum + " | blue | " + aiMove[0] + ", " + aiMove[1] + " | " + aiMove[2] + ", " + aiMove[3]);
+							System.out.println(gameOver);
+						} else if(enableAI2 && turnNum%2==1) { //essential
+							aiMove = player2.move(board); //essential
+							System.out.println(turnNum + " | red | " + aiMove[0] + ", " + aiMove[1] + " | " + aiMove[2] + ", " + aiMove[3]);
+						}
+
+						if(QuixoRules.isValidMove(aiMove, board, turnNum%2==0))
+							setSelectedTile(aiMove[0], aiMove[1]); //set selected tiles and movable ghosts
+						else
+							throw new IllegalArgumentException("AI tried to make an illegal move on turn " + turnNum);
+
+						if(!demoMode) {
+							demoSwitch = true;
+						}
+					}
+					// demoSwitch make the move and update it
+					if(demoSwitch) {
+						QuixoRules.makeMove(aiMove, board, turnNum%2==0); // essential
+						selected=false;
+						turnNum++;
+						if(!demoMode) {
+							demoSwitch = false;
+						}
+					}
+					// if demoMode = true, the two if statements above will only execute on alternating iterations
+					if(demoMode) {
+						demoSwitch = !demoSwitch;
+					}
+
+					
+				}
+
+				// Check if a player has won
+				if(currentTime-lastActionTime>=1000f/aps || apsUnlock) { 
+					System.out.println("iasughsfg");
+					winner = QuixoRules.checkForVictory(board); // essential
+					if(winner != 0) { // essential
+						gameOver = true; // essential
+						System.out.println("winner: " + winner);
+					}
+
+					lastActionTime = currentTime;
+				}
+				
+
+				//render
+				if(currentTime-lastRenderTime>=1000f/fps || fpsUnlock) {
+					render();
+					repaint();
+					lastRenderTime = currentTime;
+				}
+
+			}//while(!gameOver)
+			//quit = true; ///////////////////////////////////quit
+			try {
+				Thread.sleep(100);
+			} catch (Exception e){};
+		}//while(!quit)
+		System.out.println("End of Thread");
+		//End of Thread
 	}
 
-	public Quixo()
-	{
-		frame = new JFrame();
-		frame.setTitle("java");
-        frame.setSize(800, 600);
-        frame.setLocationRelativeTo(null);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.add(this);
-        frame.setVisible(true);
+	void setSelectedTile(int x, int y) {
+		selected = true;
+		selX = x;
+		selY = y;
+		movable = QuixoRules.movableTiles(new int[]{x, y});
+	}
 
-
-		//double buffering stuff
-		offscreen = createImage(800, 600);
-		bufferGraphics = offscreen.getGraphics();
-		addMouseListener(this);
-
-		thread = new Thread(this);
-		thread.start();
-
-	}//init
-
-	void initVars() {
+	void resetVars() {
 		player1 = new AIPlayer(true);
 		player2 = new AIPlayer(false);
+		turnNum = 0;
+		selected=false;
+		board = new QuixoBoard(new boolean[5][5], new boolean[5][5]);
+		gameOver = false;
+		winner = 0;
+		lastRenderTime = System.currentTimeMillis();
+		lastActionTime = System.currentTimeMillis();
 	}
 
+	boolean blueTurn() {
+		boolean s = true;
+		if(turnNum%2==1) {
+			s = false;
+		}
+		return s;
+	}
+
+
+	/*******************************************really shouldn't need to look under here***********************************************************/
+
 	public void render() {
-		bufferGraphics.setColor(Color.WHITE);
 		bufferGraphics.clearRect(0, 0, 800, 600);
-		//bufferGraphics.drawImage(player.picAlive, player.xPos, player.yPos, player.xSize, player.ySize, this);
-		//bufferGraphics.drawString("Welcome to Germ Eater", xWorldSize/2 - 50, yWorldSize*1/5);
+
 		bufferGraphics.setColor(Color.BLACK);
 		bufferGraphics.fillRect(0,0,800,600);
 
 		bufferGraphics.setColor(Color.WHITE);
-		String playerString = "blue";
-		if(turnNum%2==1)
-			playerString = "red";
-		bufferGraphics.drawString("Turn#: " + (turnNum/2+1) + " for " + playerString + " player", 300, 50);
+		String s = "blue";
+		if(!blueTurn())
+			s = "red";
+		bufferGraphics.drawString("Turn#: " + (turnNum/2+1) + " for " + s + " player", 300, 50);
+		bufferGraphics.drawString(s, 50, 250);
 		
+		//draw tiles
 		for(int x=0;x<5;x++) {
 			for(int y=0;y<5;y++) {
 				bufferGraphics.setColor(Color.WHITE);
-				if(isColored[x][y]) {
-					if(isBlue[x][y])
+				if(board.isColored[x][y]) {
+					if(board.isBlue[x][y])
 						bufferGraphics.setColor(Color.BLUE);
 					else
 						bufferGraphics.setColor(Color.RED);
@@ -98,294 +200,15 @@ public class Quixo extends JPanel implements Runnable, MouseListener
 			}
 		}
 
+		//draw selection and movable ghosts
 		if(selected) {
 			//selected tile
 			bufferGraphics.setColor(Color.LIGHT_GRAY);
 			bufferGraphics.drawRect(border + selX*(tileWidth+tileOffset), border + selY*(tileWidth+tileOffset), tileWidth, tileWidth);
 			bufferGraphics.setColor(Color.GREEN);
-			for(int i=0;i<movX.length;i++) {
-				bufferGraphics.fillRect(border + movX[i]*(tileWidth+tileOffset), border + movY[i]*(tileWidth+tileOffset), tileWidth, tileWidth);
+			for(int[] m:movable) {
+				bufferGraphics.fillRect(border + m[0]*(tileWidth+tileOffset), border + m[1]*(tileWidth+tileOffset), tileWidth, tileWidth);
 			}
-		}
-	}
-
-	@Override
-	public void paintComponent(Graphics g)
-	{
-		//double buffering clear image
-
-		g.drawImage(offscreen, 0, 0, this);
-
-	}//paint
-
-	public void run()
-	{
-		//Start of Thread
-		System.out.println("Start of Thread");
-	
-		initVars();
-		boolean gameOver = false;
-		int winner = 0; // 0 -draw 1 -red 2 -blue
-
-		render();
-		repaint();
-		long lastRenderTime = System.currentTimeMillis();
-		long lastActionTime = System.currentTimeMillis();
-		while(!gameOver)
-		{
-			long currentTime = System.currentTimeMillis();
-			if(currentTime-lastActionTime>=1000f/fps) {
-				if(enableAI1 && turnNum%2==0) {
-					int[] AImove = player1.move(isColored, isBlue);
-					System.out.println(turnNum + " | blue | " + AImove[0] + ", " + AImove[1] + " | " + AImove[2] + ", " + AImove[3]);
-					if(selectTile(AImove[0], AImove[1])) {
-						makeMove(AImove[2], AImove[3]);
-					}
-					if(checkForBlueVictory()) {
-						gameOver = true;
-						winner = 2;
-					}
-				}
-
-				else if(enableAI2 && turnNum%2==1) {
-					int[] AImove = player2.move(isColored, isBlue);
-					System.out.println(turnNum + " | red | " + AImove[0] + ", " + AImove[1] + " | " + AImove[2] + ", " + AImove[3]);
-					if(selectTile(AImove[0], AImove[1])) {
-						makeMove(AImove[2], AImove[3]);
-					}
-					if(checkForRedVictory()) {
-						gameOver = true;
-						winner = 1;
-					}	
-				}
-				lastActionTime = currentTime;
-			}
-			
-			if(currentTime-lastRenderTime>=1000f/fps) {
-				render();
-				repaint();
-				lastRenderTime = currentTime;
-			}
-
-		}
-		System.out.println(winner);
-		System.out.println("End of Thread");
-		//End of Thread
-	}
-
-	boolean checkForBlueVictory() {
-		//horizontal
-		boolean vic;
-		for(int y=0;y<5;y++) {
-			vic = true;
-			for(int x=0;x<5;x++) {
-				if(!isBlue[x][y])
-					vic=false;
-			}
-			if(vic) {
-				return true;
-			}
-		}
-		//vertical
-		for(int x=0;x<5;x++) {
-			vic = true;
-			for(int y=0;y<5;y++) {
-				if(!isBlue[x][y])
-					vic=false;
-			}
-			if(vic) {
-				return true;
-			}
-		}
-		//diags
-		if(isBlue[0][0] && isBlue[1][1] && isBlue[2][2] && isBlue[3][3] && isBlue[4][4]) {
-			return true;
-		}
-
-		if(isBlue[0][4] && isBlue[1][3] && isBlue[2][2] && isBlue[3][1] && isBlue[4][1]) {
-			return true;
-		}
-
-		return false;
-	}
-
-	boolean checkForRedVictory() {
-		boolean vic;
-		for(int y=0;y<5;y++) {
-			vic = true;
-			for(int x=0;x<5;x++) {
-				if(isBlue[x][y] || !isColored[x][y])
-					vic=false;
-			}
-			if(vic) {
-				return true;
-			}
-		}
-
-		for(int x=0;x<5;x++) {
-			vic = true;
-			for(int y=0;y<5;y++) {
-				if(isBlue[x][y] || !isColored[x][y])
-					vic=false;
-			}
-			if(vic) {
-
-				return true;
-			}
-		}
-
-		if(!(isBlue[0][0] || isBlue[1][1] || isBlue[2][2] || isBlue[3][3] || isBlue[4][4])) {
-			if(isColored[0][0] && isColored[1][1] && isColored[2][2] && isColored[3][3] && isColored[4][4])
-				
-				return true;
-		}
-
-		if(!(isBlue[0][4] || isBlue[1][3] || isBlue[2][2] || isBlue[3][1] || isBlue[4][1])) {
-			if(isColored[0][4] && isColored[1][3] && isColored[2][2] && isColored[3][1] && isColored[4][1])
-				return true;
-		}
-
-		return false;
-	}
-
-	void computeMovable() {
-		int sX = selX;
-		int sY = selY;
-
-		if(sX==0) {
-			//corners
-			if(sY == 0 || sY ==4) { 
-				movX = new int[2];
-				movY = new int[2];
-				if(sY==0) {
-					movX[0]=0; movY[0]=4;
-					movX[1]=4; movY[1]=0;
-				}
-				if(sY==4) {
-					movX[0]=0; movY[0]=0;
-					movX[1]=4; movY[1]=4;
-				}
-				
-			} else {
-				movX = new int[3];
-				movY = new int[3];
-				movX[0]=0; movY[0]=0;
-				movX[1]=0; movY[1]=4;
-				movX[2]=4; movY[2]=sY;
-			}	
-		} else if(sX==4) {
-			//corners
-			if(sY == 0 || sY ==4) { 
-				movX = new int[2];
-				movY = new int[2];
-				if(sY==0) {
-					movX[0]=0; movY[0]=0;
-					movX[1]=4; movY[1]=4;
-				}
-				if(sY==4) {
-					movX[0]=4; movY[0]=0;
-					movX[1]=0; movY[1]=4;
-				}
-				
-			} else {
-				movX = new int[3];
-				movY = new int[3];
-				movX[0]=4; movY[0]=0;
-				movX[1]=4; movY[1]=4;
-				movX[2]=0; movY[2]=sY;
-			}	
-		}
-
-		else {
-			movX = new int[3];
-			movY = new int[3];
-			if(sY==0) {
-				movX[0]=sX; movY[0]=4;
-				movX[1]=0; movY[1]=0;
-				movX[2]=4; movY[2]=0;
-			}
-			if(sY==4) {
-				movX[0]=sX; movY[0]=0;
-				movX[1]=4; movY[1]=4;
-				movX[2]=0; movY[2]=4;
-			}
-			
-		}
-	}
-
-	boolean selectTile(int inI, int inJ) {
-		int i = inI;
-		int j = inJ;
-		if(i==0||i==4||j==0||j==4) {
-			if(isColored[i][j]) { 
-				if(isBlue[i][j] == (turnNum%2==0)) { 
-					selected = true;
-					selX = i;
-					selY = j;
-					computeMovable();
-					return true;
-				}
-			} else {
-				selected = true;
-				selX = i;
-				selY = j;
-				computeMovable();	
-				return true;
-			}
-		}
-		return false;			
-	}
-
-	void makeMove(int inTx, int inTy) {
-		int xTarget = inTx;
-		int yTarget = inTy;
-		boolean clickValid = false;
-			
-		for(int i=0;i<movX.length;i++) {
-			if(movX[i] == xTarget && movY[i] == yTarget) {
-				clickValid = true;
-			}
-		}
-		//escape
-		if(!clickValid) {
-			selected = false;
-		} else {
-			//shift ignore target
-			if(selX == xTarget) {
-				if(selY > yTarget) {
-					for(int i=selY;i>0;i--) {
-						isColored[selX][i] = isColored[selX][i-1];
-						isBlue[selX][i] = isBlue[selX][i-1];
-					}
-				}
-				if(selY <yTarget) {
-					for(int i=selY;i<4;i++) {
-						isColored[selX][i] = isColored[selX][i+1];
-						isBlue[selX][i] = isBlue[selX][i+1];
-					}
-				}
-			}
-			if(selY == yTarget) {
-				if(selX > xTarget) {
-					for(int i=selX;i>0;i--) {
-						isColored[i][selY] = isColored[i-1][selY];
-						isBlue[i][selY] = isBlue[i-1][selY];
-					}
-				}
-				if(selX < xTarget) {
-					for(int i=selX;i<4;i++) {
-						isColored[i][selY] = isColored[i+1][selY];
-						isBlue[i][selY] = isBlue[i+1][selY];
-					}
-				}
-			}
-
-			//put target
-			isColored[xTarget][yTarget] = true;
-			isBlue[xTarget][yTarget] = (turnNum%2==0);
-
-			selected = false;
-			turnNum++;
 		}
 	}
 
@@ -393,12 +216,11 @@ public class Quixo extends JPanel implements Runnable, MouseListener
 		int x = e.getX();
 		int y = e.getY();
 
+		System.out.println(e.getButton());
+
 		//reset game
 		if(e.getButton()==2) {
-			turnNum=0;
-			selected=false;
-			isColored = new boolean[5][5];
-			isBlue = new boolean[5][5];
+			resetVars();
 		}
 
 		//reset select
@@ -413,7 +235,7 @@ public class Quixo extends JPanel implements Runnable, MouseListener
 					if(x>border+i*(tileWidth+tileOffset) && x<border+i*(tileWidth+tileOffset)+tileWidth) {
 						if(y>border+j*(tileWidth+tileOffset) && y<border+j*(tileWidth+tileOffset)+tileWidth) {
 							
-							selectTile(i,j);
+							setSelectedTile(i,j);
 							
 						}
 
@@ -439,7 +261,13 @@ public class Quixo extends JPanel implements Runnable, MouseListener
 				}
 			}
 
-			makeMove(xTarget, yTarget);
+			int[] m = new int[]{selX, selY, xTarget, yTarget};
+			if(QuixoRules.isValidMove(m, board, turnNum%2==0)){
+				QuixoRules.makeMove(m, board, turnNum%2==0);
+				turnNum++;
+			}
+			
+			selected = false;
 			
 			//check if clicked in box
 			//
@@ -458,4 +286,42 @@ public class Quixo extends JPanel implements Runnable, MouseListener
 	public void mouseReleased(MouseEvent e) {
 		//
 	}
+
+	@Override
+	public void paintComponent(Graphics g)
+	{
+		//double buffering clear image
+
+		g.drawImage(offscreen, 0, 0, this);
+
+	}//paint
+
+	public static void main(String[] args) {
+		new Quixo();
+	}
+
+	public Quixo()
+	{
+		if(lockAPStoFPS) { 
+			aps = fps;
+		}
+
+		frame = new JFrame();
+		frame.setTitle("java");
+        frame.setSize(800, 600);
+        frame.setLocationRelativeTo(null);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.add(this);
+        frame.setVisible(true);
+
+
+		//double buffering stuff
+		offscreen = createImage(800, 600);
+		bufferGraphics = offscreen.getGraphics();
+		addMouseListener(this);
+
+		thread = new Thread(this);
+		thread.start();
+
+	}//init
 }
