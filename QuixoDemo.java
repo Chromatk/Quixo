@@ -39,7 +39,7 @@ public class QuixoDemo extends JPanel implements Runnable, MouseListener
 	AIPlayer player1;
 	AIPlayer player2;
 
-	float fps = 2f;
+	float fps = 5f;
 
 	public static void main(String[] args) {
 		new QuixoDemo();
