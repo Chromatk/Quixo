@@ -72,62 +72,9 @@ public class AIPlayer {
 		}*/
 	}
 
-	double rateBoard(boolean[][] c, boolean[][] b) {
+	double rateBoard(QuixoBoard b) {
 		return 0.0;
 	}
 
 	
-
-	/*boolean[][][] getNewBoard(int[] move, boolean[][] c, boolean[][] b) {
-		int selX = move[0];
-		int selY = move[1];
-		int xTarget = move[2];
-		int yTarget = move[3];
-
-		boolean[][] colored = new boolean[c.length][c[0].length];
-		boolean[][] blue = new boolean[b.length][b[0].length];
-
-		for(int i = 0;i<colored.length;i++) {
-			for(int j=0;j<colored[i].length;j++) {
-				colored[i][j] = c[i][j];
-				blue[i][j] = b[i][j];
-			}
-		}
-		
-		//shift ignore target
-		if(selX == xTarget) {
-			if(selY > yTarget) {
-				for(int i=selY;i>0;i--) {
-					colored[selX][i] = colored[selX][i-1];
-					blue[selX][i] = blue[selX][i-1];
-				}
-			}
-			if(selY <yTarget) {
-				for(int i=selY;i<4;i++) {
-					colored[selX][i] = colored[selX][i+1];
-					blue[selX][i] = blue[selX][i+1];
-				}
-			}
-		}
-		if(selY == yTarget) {
-			if(selX > xTarget) {
-				for(int i=selX;i>0;i--) {
-					colored[i][selY] = colored[i-1][selY];
-					blue[i][selY] = blue[i-1][selY];
-				}
-			}
-			if(selX < xTarget) {
-				for(int i=selX;i<4;i++) {
-					colored[i][selY] = colored[i+1][selY];
-					blue[i][selY] = blue[i+1][selY];
-				}
-			}
-		}
-
-		//put target
-		colored[xTarget][yTarget] = true;
-		blue[xTarget][yTarget] = color;
-
-		return(new boolean[][][]{colored, blue});
-	}*/
 }

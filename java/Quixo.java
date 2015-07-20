@@ -1,6 +1,7 @@
 
 
 import java.awt.*;
+import java.io.*;
 import java.util.*;
 import java.awt.Graphics;
 import javax.swing.JFrame;
@@ -37,17 +38,18 @@ public class Quixo extends JPanel implements Runnable, MouseListener
 	AIPlayer player1;
 	AIPlayer player2;
 
-	boolean demoMode = false;
+	boolean demoMode = true;
 	boolean demoSwitch = false; //KEEP THIS AS FALSE ON INIT
 
-	float fps = 20f;
+	float fps = 5f;
 	float aps = 2f;
 	final boolean lockAPStoFPS = true;
-	final boolean apsUnlock = true;
-	final boolean fpsUnlock = true;
+	final boolean apsUnlock = false;
+	final boolean fpsUnlock = false;
 
 	long lastRenderTime = System.currentTimeMillis();
 	long lastActionTime = System.currentTimeMillis();
+	String log = "";
 
 	boolean quit = false;
 	boolean gameOver = false;
@@ -55,9 +57,10 @@ public class Quixo extends JPanel implements Runnable, MouseListener
 
 	public void run()
 	{
-		//Start of Thread
-		System.out.println("Start of Thread");
-	
+		//Start of Thread	
+		log("log started");
+		log("Start of Thread");
+
 		resetVars();
 
 		render();
@@ -69,7 +72,7 @@ public class Quixo extends JPanel implements Runnable, MouseListener
 
 			while(!gameOver)
 			{
-				long currentTime = System.currentTimeMillis()+999999999l;
+				long currentTime = System.currentTimeMillis();
 
 				//AI stuff
 				if((currentTime-lastActionTime>=1000f/aps || apsUnlock) && (enableAI1 || enableAI2)) {
@@ -80,11 +83,12 @@ public class Quixo extends JPanel implements Runnable, MouseListener
 					if(!demoSwitch) {
 						if(enableAI1 && turnNum%2==0) {//essential
 							aiMove = player1.move(board); //essential
-							System.out.println(turnNum + " | blue | " + aiMove[0] + ", " + aiMove[1] + " | " + aiMove[2] + ", " + aiMove[3]);
-							System.out.println(gameOver);
+							//System.out.println(turnNum + " | blue | " + aiMove[0] + ", " + aiMove[1] + " | " + aiMove[2] + ", " + aiMove[3]);
+							log(turnNum + " | blue | " + aiMove[0] + ", " + aiMove[1] + " | " + aiMove[2] + ", " + aiMove[3]);
 						} else if(enableAI2 && turnNum%2==1) { //essential
 							aiMove = player2.move(board); //essential
-							System.out.println(turnNum + " | red | " + aiMove[0] + ", " + aiMove[1] + " | " + aiMove[2] + ", " + aiMove[3]);
+							//System.out.println(turnNum + " | red | " + aiMove[0] + ", " + aiMove[1] + " | " + aiMove[2] + ", " + aiMove[3]);
+							log(turnNum + " | red | " + aiMove[0] + ", " + aiMove[1] + " | " + aiMove[2] + ", " + aiMove[3]);
 						}
 
 						if(QuixoRules.isValidMove(aiMove, board, turnNum%2==0))
@@ -115,12 +119,12 @@ public class Quixo extends JPanel implements Runnable, MouseListener
 
 				// Check if a player has won
 				if(currentTime-lastActionTime>=1000f/aps || apsUnlock) { 
-					System.out.println("iasughsfg");
 					winner = QuixoRules.checkForVictory(board); // essential
 					if(winner != 0) { // essential
 						gameOver = true; // essential
-						System.out.println("winner: " + winner);
-					}
+						//System.out.println("winner: " + winner);
+						log("winner: "+winner);
+					} 
 
 					lastActionTime = currentTime;
 				}
@@ -137,10 +141,38 @@ public class Quixo extends JPanel implements Runnable, MouseListener
 			//quit = true; ///////////////////////////////////quit
 			try {
 				Thread.sleep(100);
-			} catch (Exception e){};
+			} catch (Exception e){
+				e.printStackTrace();
+			};
 		}//while(!quit)
+
+		exportLog(log);
 		System.out.println("End of Thread");
+		System.exit(0);
 		//End of Thread
+	}
+
+	private void exportLog(String s) {
+		BufferedWriter writer = null;
+		try {
+			File logFile = new File("QuixoLog.txt");
+			System.out.println("writing log to: " + logFile.getCanonicalPath());
+
+			writer = new BufferedWriter(new FileWriter(logFile));
+			writer.write(s);
+
+			System.out.println("log successfully written");
+		} catch(Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				writer.close();
+			} catch (Exception e) {}
+		}
+	}
+
+	private void log(String s) {
+		log += "\n"+(new Date()).toString() + " | " + s;
 	}
 
 	void setSelectedTile(int x, int y) {
@@ -216,7 +248,11 @@ public class Quixo extends JPanel implements Runnable, MouseListener
 		int x = e.getX();
 		int y = e.getY();
 
-		System.out.println(e.getButton());
+		//System.out.println(e.getButton());
+
+		if(e.getButton() == 4) {
+			quit = true;
+		}
 
 		//reset game
 		if(e.getButton()==2) {
