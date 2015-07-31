@@ -1,5 +1,14 @@
+
+/* QuixoRules.java
+ * Description: Quixo specific rules and operations are handled here.
+ *				Class and methods are meant to be accessed statically
+ * see README or check https://github.com/Chromatk/Quixo for documentation and contact info
+ */
+
 public class QuixoRules {
 
+	// returns a Quixoboard which is the result of player p moving chip (m[0], m[1]) to (m[2],m[3])
+	// p: blue = true, red = false
 	public static void makeMove(int[] m, QuixoBoard b, boolean p) {
 		int xStart = m[0];
 		int yStart = m[1];
@@ -43,6 +52,68 @@ public class QuixoRules {
 		isBlue[xTarget][yTarget] = p;
 	}
 
+	// returns the number of tiles the same color as p on QuixoBoard b
+	// p: blue = true, red = false
+	public static int countColoredTiles(QuixoBoard b, boolean p) {
+		int tiles = 0;
+		for(int x=0;x<5;x++) {
+			for(int y=0;y<5;y++) {
+
+				if(b.isColored[x][y] && (b.isBlue[x][y] == p)) {
+					tiles++;
+				}
+
+			}
+		}
+
+		return(tiles);
+	}
+
+	// returns value base on number of consecutive tiles on each row, column, and major/minor diagonal for player p on board b
+	// prototype board analysis/rating heuristic
+	public static int countConsecutive(QuixoBoard b, boolean p) {
+		int r = 0;
+		int nr = 0;
+		int mod = 2;
+		int nMod = 1;
+		//horizontal
+		for(int y=0;y<5;y++) {
+			int inRow = 0;
+			int nInRow = 0;
+			for(int x=0;x<5;x++) {
+				if(b.isColored[x][y]) {
+					if(b.isBlue[x][y]==p) {
+						inRow++;
+					} else {
+						nInRow++;;
+					}
+				}
+				r+=inRow*inRow;
+				nr+=nInRow*nInRow;
+			}
+		}
+
+		for(int x=0;x<5;x++) {
+			int inCol = 0;
+			int nInCol = 0;
+			for(int y=0;y<5;y++) {
+				if(b.isColored[x][y]) {
+					if(b.isBlue[x][y] == p) {
+						inCol++;
+					} else {
+						nInCol++;
+					}
+				}
+				r+=inCol*inCol;
+				nr+=nInCol*nInCol;
+			}
+		}
+
+		return r-nr;
+	}
+
+	// checks if a player has won
+	// return:  0 none, 1 red, 2 blue, 3 both
 	public static int checkForVictory(QuixoBoard b) {
 		int victory = 0;
 		boolean bVic = checkForPlayerVictory(true, b);
@@ -59,6 +130,8 @@ public class QuixoRules {
 		return victory;
 	}
 
+	// checks if player p has won on board b
+	// intended for implementation in checkForVictory(QuixoBoard b)
 	public static boolean checkForPlayerVictory(boolean p, QuixoBoard b) {
 
 		boolean vic;
@@ -120,6 +193,7 @@ public class QuixoRules {
 		return false;
 	}
 
+	//checks if tile t is a valid tile for player player to choose on board b
 	public static boolean playerCanChooseTile(int[] t, QuixoBoard b, boolean player) {
 		if(t.length!=2)
 			throw new IllegalArgumentException ("playerCanChooseTile in QuixoRules");
@@ -138,6 +212,8 @@ public class QuixoRules {
 		return false;			
 	}
 
+	// returns all spaces tile m can be placed (doesn't take player color and board into account)
+	// i.e. up down left right
 	public static int[][] movableTiles(int[] m) {
 		int x = m[0];
 		int y = m[1];
@@ -171,7 +247,7 @@ public class QuixoRules {
 		return moves;
 	}
 
-
+	//return if tile (m[0], m[1]) can be moved to (m[2], m[3])
 	//@TODO: ACTUALLY WRITE THIS METHOD
 	public static boolean isValidMove(int[] m, QuixoBoard b, boolean player) {
 		int[] start = new int[]{m[0], m[1]};
