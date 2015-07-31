@@ -1,4 +1,3 @@
-
 /* QuixoRules.java
  * Description: Quixo specific rules and operations are handled here.
  *				Class and methods are meant to be accessed statically

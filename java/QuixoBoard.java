@@ -1,3 +1,9 @@
+/*QuixoBoard.java
+ * Description: Class to represent the board composed of tiles(uncolored, blue, red)
+ *
+ * see README or check https://github.com/Chromatk/Quixo for documentation and contact info
+ */
+
 public class QuixoBoard {
 	public boolean[][] isColored;
 	public boolean[][] isBlue;

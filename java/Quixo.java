@@ -1,4 +1,3 @@
-
 /* Quixo.java
  * Description: Entry point, graphics, input, and the main thread where all game and AI calls are made
  *				This class holds the main thread where the game is executed.

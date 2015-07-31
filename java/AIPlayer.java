@@ -1,3 +1,9 @@
+/* AIPlayer.java
+ * Description: AI to play Quixo
+ *
+ * see README or check https://github.com/Chromatk/Quixo for documentation and contact info
+ */
+
 import java.util.*;
 
 public class AIPlayer {
